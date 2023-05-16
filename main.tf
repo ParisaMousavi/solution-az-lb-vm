@@ -58,7 +58,7 @@ resource "azurerm_network_interface" "this_win" {
 
 
 #----------------------------------------------
-#       For Win Machine
+#       For Win Machine (web server)
 #----------------------------------------------
 module "nsg_win_name" {
   source             = "github.com/ParisaMousavi/az-naming//nsg?ref=main"
@@ -94,7 +94,6 @@ module "nsg_win" {
     By         = "parisamoosavinezhad@hotmail.com"
   }
 }
-
 
 resource "azurerm_network_interface_security_group_association" "this_win" {
   network_interface_id      = azurerm_network_interface.this_win.id
@@ -146,8 +145,9 @@ SETTINGS
   }
 }
 
-
-
+#----------------------------------------------
+#       Load balancer 
+#----------------------------------------------
 module "lb_pip_name" {
   source             = "github.com/ParisaMousavi/az-naming//pip?ref=main"
   prefix             = var.prefix
@@ -164,6 +164,16 @@ resource "azurerm_public_ip" "example" {
   allocation_method   = "Static"
   sku                 = "Basic"
 }
+
+# It was only a test
+# resource "azurerm_public_ip" "example_0" {
+#   count               = 8
+#   name                = "${module.lb_pip_name.result}-${count.index}"
+#   location            = module.resourcegroup.location
+#   resource_group_name = module.resourcegroup.name
+#   allocation_method   = "Static"
+#   sku                 = "Basic"
+# }
 
 module "lb_name" {
   source             = "github.com/ParisaMousavi/az-naming//lb?ref=main"
@@ -184,6 +194,16 @@ resource "azurerm_lb" "example" {
     name                 = "PublicIPAddress"
     public_ip_address_id = azurerm_public_ip.example.id
   }
+
+  # It was only a test
+  # dynamic "frontend_ip_configuration" {
+  #   for_each = range(8)
+  #   content {
+  #     name                 = "PublicIPAddress-${frontend_ip_configuration.value}"
+  #     public_ip_address_id = azurerm_public_ip.example_0[frontend_ip_configuration.value].id
+  #   }
+  # }
+
 }
 
 resource "azurerm_lb_probe" "example" {
@@ -213,10 +233,10 @@ resource "azurerm_lb_rule" "web_lb_rule_app1" {
 # Resource-6: Associate Network Interface and Standard Load Balancer
 # https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface_backend_address_pool_association
 resource "azurerm_network_interface_backend_address_pool_association" "web_nic_lb_associate" {
-  depends_on = [ 
-    azurerm_windows_virtual_machine.this_win ,
+  depends_on = [
+    azurerm_windows_virtual_machine.this_win,
     azurerm_lb_backend_address_pool.web_lb_backend_address_pool
-    ]
+  ]
   network_interface_id    = azurerm_network_interface.this_win.id
   ip_configuration_name   = azurerm_network_interface.this_win.ip_configuration[0].name
   backend_address_pool_id = azurerm_lb_backend_address_pool.web_lb_backend_address_pool.id
