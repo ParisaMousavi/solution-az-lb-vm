@@ -1,3 +1,6 @@
+# https://learn.microsoft.com/en-us/azure/virtual-machines/windows/quick-create-terraform
+# https://learn.microsoft.com/en-us/azure/virtual-machines/extensions/custom-script-windows#troubleshoot-and-support
+# https://github.com/MicrosoftLearning/AZ-104-MicrosoftAzureAdministrator/blob/master/Allfiles/Labs/08/az104-08-custom_script_extension.json
 module "rg_name" {
   source             = "github.com/ParisaMousavi/az-naming//rg?ref=2022.10.07"
   prefix             = var.prefix
@@ -210,6 +213,10 @@ resource "azurerm_lb_rule" "web_lb_rule_app1" {
 # Resource-6: Associate Network Interface and Standard Load Balancer
 # https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface_backend_address_pool_association
 resource "azurerm_network_interface_backend_address_pool_association" "web_nic_lb_associate" {
+  depends_on = [ 
+    azurerm_windows_virtual_machine.this_win ,
+    azurerm_lb_backend_address_pool.web_lb_backend_address_pool
+    ]
   network_interface_id    = azurerm_network_interface.this_win.id
   ip_configuration_name   = azurerm_network_interface.this_win.ip_configuration[0].name
   backend_address_pool_id = azurerm_lb_backend_address_pool.web_lb_backend_address_pool.id
